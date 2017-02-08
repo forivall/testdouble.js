@@ -4,8 +4,8 @@ store = require('./store')
 calls = require('./store/calls')
 stubbings = require('./store/stubbings')
 
-module.exports = (name) ->
-  _.tap createTestDoubleFunction(), (testDouble) ->
+module.exports = (name, config) ->
+  _.tap createTestDoubleFunction(config), (testDouble) ->
     entry = store.for(testDouble, true)
     if name?
       entry.name = name
@@ -13,7 +13,9 @@ module.exports = (name) ->
     else
       testDouble.toString = -> "[test double (unnamed)]"
 
-createTestDoubleFunction = ->
+createTestDoubleFunction = (config) ->
   testDouble = (args...) ->
     calls.log(testDouble, args, this)
     stubbings.invoke(testDouble, args)
+  _.assign(testDouble, config)
+  testDouble

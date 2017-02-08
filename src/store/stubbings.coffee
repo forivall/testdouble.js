@@ -12,8 +12,11 @@ module.exports =
     store.for(testDouble).stubbings.push({callCount: 0, stubbedValues, args, config})
 
   invoke: (testDouble, actualArgs) ->
-    return unless stubbing = stubbingFor(testDouble, actualArgs)
-    executePlan(stubbing, actualArgs)
+    if stubbing = stubbingFor(testDouble, actualArgs)
+      return executePlan(stubbing, actualArgs)
+    if typeof testDouble.fallthrough is 'function'
+      return testDouble.fallthrough.apply(this, actualArgs)
+    testDouble.default
 
   for: (testDouble) ->
     store.for(testDouble).stubbings

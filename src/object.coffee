@@ -11,11 +11,11 @@ module.exports = (nameOrType, config) ->
 
 createTestDoubleObject = (nameOrType, config) ->
   if isConstructor(nameOrType)
-    createTestDoublesForPrototype(nameOrType)
+    createTestDoublesForPrototype(nameOrType, config)
   else if _.isPlainObject(nameOrType)
-    createTestDoublesForPlainObject(nameOrType)
+    createTestDoublesForPlainObject(nameOrType, config)
   else if _.isArray(nameOrType)
-    createTestDoublesForFunctionNames(nameOrType)
+    createTestDoublesForFunctionNames(nameOrType, config)
   else
     createTestDoubleViaProxy(nameOrType, config)
 
@@ -26,28 +26,28 @@ getAllPropertyNames = (type) ->
     break unless type = Object.getPrototypeOf(type)
   props
 
-createTestDoublesForPrototype = (type) ->
+createTestDoublesForPrototype = (type, config) ->
   _.reduce getAllPropertyNames(type.prototype), (memo, name) ->
     memo[name] = if _.isFunction(type.prototype[name])
-      tdFunction("#{nameOf(type)}##{name}")
+      tdFunction("#{nameOf(type)}##{name}", config)
     else
       type.prototype[name]
     memo
   , {}
 
-createTestDoublesForPlainObject = (obj) ->
+createTestDoublesForPlainObject = (obj, config) ->
   _.reduce _.functions(obj), (memo, functionName) ->
     memo[functionName] = if isConstructor(obj[functionName])
       createTestDoublesForPrototype(obj[functionName])
     else
-      tdFunction(".#{functionName}")
+      tdFunction(".#{functionName}", config)
 
     memo
   , cloneWithNonEnumerableProperties(obj)
 
-createTestDoublesForFunctionNames = (names) ->
+createTestDoublesForFunctionNames = (names, config) ->
   _.reduce names, (memo, functionName) ->
-    memo[functionName] = tdFunction(".#{functionName}")
+    memo[functionName] = tdFunction(".#{functionName}", config)
     memo
   , {}
 
@@ -55,7 +55,7 @@ createTestDoubleViaProxy = (name, config) ->
   proxy = new Proxy obj = {},
     get: (target, propKey, receiver) ->
       if !obj.hasOwnProperty(propKey) && !_.includes(config.excludeMethods, propKey)
-        obj[propKey] = proxy[propKey] = tdFunction("#{nameOf(name)}##{propKey}")
+        obj[propKey] = proxy[propKey] = tdFunction("#{nameOf(name)}##{propKey}", config)
       obj[propKey]
 
 withDefaults = (config) ->
